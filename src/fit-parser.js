@@ -28,16 +28,21 @@ class FitParser {
 
         // FIT file records
 
+        /** @type {FitDefinitionMessage[]} */
         this.definitionMessages = [];
+        /** @type {FitDataMessage[]} */
         this.dataMessages = [];
+        /** @type {FitMessage[]} */
         this.records = [];
 
         while (this.dataReader.getPosition() < this.header.size + this.header.dataSize) {
             const record = this.readRecord();
-            if (record.header.messageType === 1) {
+            if (record instanceof FitDefinitionMessage) {
                 this.definitionMessages.push(record);
-            } else {
+            } else if (record instanceof FitDataMessage) {
                 this.dataMessages.push(record);
+            } else {
+                throw new Error('Unknown FIT message: ' + record.constructor.name);
             }
             this.records.push(record);
         }
@@ -51,33 +56,42 @@ class FitParser {
         }
     }
 
+    /**
+     * @return {FitMessage}
+     */
     readRecord() {
         const recordHeader = this.readRecordHeader();
-        let recordContent;
+        let record;
 
         if (recordHeader.headerType === 0) {  // normal header
             if (recordHeader.messageType === 1) {  // definition message
-                recordContent = this.readDefinitionMessage(recordHeader);
+                record = this.readDefinitionMessage(recordHeader);
             } else {  // data message
-                recordContent = this.readDataMessage(recordHeader);
+                record = this.readDataMessage(recordHeader);
             }
         } else {  // compressed header
             throw new Error('Found compressed header');
         }
 
-        return { header: recordHeader, content: recordContent };
-        // console.info(`${recordType} Record`, recordHeader, recordContent);
+        return record;
     }
 
+    /**
+     * @return {FitRecordHeader}
+     */
     readRecordHeader() {
-        const recordHeader = {};
+        const recordHeader = new FitRecordHeader();
         this.dataReader.readByteBits(recordHeader,
             { headerType: 1, messageType: 1, messageTypeSpecific: 1, reserved: 1, localMessageType: 4 });
         return recordHeader;
     }
 
+    /**
+     * @param {FitRecordHeader} recordHeader
+     * @return {FitDefinitionMessage}
+     */
     readDefinitionMessage(recordHeader) {
-        const recordContent = {};
+        const recordContent = new FitDefinitionMessage();
 
         this.recordPayloadSize = 0;
 
@@ -113,8 +127,12 @@ class FitParser {
         return recordContent;
     }
 
+    /**
+     * @param {FitRecordHeader} recordHeader
+     * @return {FitDataMessage}
+     */
     readDataMessage(recordHeader) {
-        const recordContent = {};
+        const recordContent = new FitDataMessage(recordHeader);
         if (recordHeader.messageTypeSpecific === 1) {
             throw new Error('messageTypeSpecific field should not be 1 for data messages');
         }
