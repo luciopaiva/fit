@@ -17,7 +17,7 @@ class DropTarget {
             if (e.dataTransfer.files.length > 0) {
                 const fileInfo = e.dataTransfer.files[0];
                 const reader = new FileReader();
-                reader.addEventListener('load', re => callback(re.target.result));
+                reader.addEventListener('load', re => callback(fileInfo.name, re.target.result));
                 reader.readAsArrayBuffer(fileInfo);
             }
         });
@@ -173,17 +173,25 @@ class FitParser {
         this.dataReader = dataReader;
         this.header = {};
 
+        // FIT file header
+
         this.dataReader.read(this.header, {
             size: 'B', protocolVersion: 'B', profileVersion: 'W', dataSize: 'D', magic: 'S4'
         });
+
+        if (this.header.magic !== '.FIT') {
+            throw new Error('Invalid FIT file format (header signature was not found)');
+        }
 
         if (this.header.size === 14) {
             this.dataReader.read(this.header, { crc: 'W' });
         }
 
-        const records = [];
+        // FIT file records
+
+        this.records = [];
         while (this.dataReader.getPosition() < this.header.size + this.header.dataSize) {
-            records.push(this.readRecord());
+            this.records.push(this.readRecord());
         }
 
         const bytesLeft = (this.length() - this.dataReader.getPosition());
@@ -191,11 +199,8 @@ class FitParser {
         if (bytesLeft === 2) {
             this.dataReader.read(this.header, { crc2: 'W' });
         } else if (bytesLeft !== 0) {
-            throw new Error('Unexpected number of bytes left: ' + bytesLeft);
+            throw new Error('Malformed FIT file: unexpected trailing data (' + bytesLeft + ' unknown bytes)');
         }
-
-        console.info('File Header', this.header);
-        console.info('Total records: ' + records.length);
     }
 
     readRecord() {
@@ -295,24 +300,33 @@ class FitApp {
         // Drop target screen bindings
         this.loadSampleButton = document.getElementById('load-sample-button');
         this.loadSampleButton.addEventListener('click', () => this.onSampleButtonClick());
-        DropTarget.apply(this.dropTargetScreen, async (buffer) => await this.processFitFile(buffer));
+        DropTarget.apply(this.dropTargetScreen, (fileName, buffer) => this.processFitFile(fileName, buffer));
+
+        // Main screen
+        this.fileInfoField = document.getElementById('file-info');
+        this.fileHeaderTable = document.getElementById('file-header-table').querySelector('tbody');
+        this.rowTemplate = document.getElementById('file-header-row-template').querySelector('tr');
+        this.fileContentsTable = document.getElementById('file-contents-table').querySelector('tbody');
+        this.fileFooterTable = document.getElementById('file-footer-table').querySelector('tbody');
     }
 
     async onSampleButtonClick() {
         const buffer = await FileLoader.load(FitApp.SAMPLE_FIT_FILE_NAME);
-        await this.processFitFile(buffer);
+        await this.processFitFile(FitApp.SAMPLE_FIT_FILE_NAME, buffer);
     }
 
     async initializeScreens() {
         this.dropTargetScreen = document.getElementById(FitApp.SCREEN_DROP);
         this.loadingScreen = document.getElementById(FitApp.SCREEN_LOADING);
         this.mainScreen = document.getElementById(FitApp.SCREEN_MAIN);
+        this.errorScreen = document.getElementById(FitApp.SCREEN_ERROR);
 
         /** @type {Map<string, Node>} */
         this.screenByName = new Map();
         this.screenByName.set(FitApp.SCREEN_DROP, this.dropTargetScreen);
         this.screenByName.set(FitApp.SCREEN_LOADING, this.loadingScreen);
         this.screenByName.set(FitApp.SCREEN_MAIN, this.mainScreen);
+        this.screenByName.set(FitApp.SCREEN_ERROR, this.errorScreen);
 
         for (const screen of this.screenByName.values()) {
             screen.classList.add('hidden');
@@ -344,16 +358,51 @@ class FitApp {
     }
 
     /**
+     * @param {string} fileName
      * @param {ArrayBuffer} buffer
      */
-    async processFitFile(buffer) {
+    async processFitFile(fileName, buffer) {
         await this.switchScreen(FitApp.SCREEN_LOADING);
 
         const dataView = new DataView(buffer);
         const dataReader = new DataReader(dataView);
-        this.fit = new FitParser(dataReader);
+
+        try {
+            this.fit = new FitParser(dataReader);
+        } catch (error) {
+            await this.showErrorMessage(error.message);
+            return;
+        }
 
         await this.switchScreen(FitApp.SCREEN_MAIN);
+
+        this.fileInfoField.innerText = `${fileName} (${buffer.byteLength} bytes)`;
+
+        // bind header info
+        // size: 'B', protocolVersion: 'B', profileVersion: 'W', dataSize: 'D', magic: 'S4'
+        this.addInfoRow('Header size', this.fit.header.size + ' B', this.fileHeaderTable);
+        this.addInfoRow('Protocol version', this.fit.header.protocolVersion, this.fileHeaderTable);
+        this.addInfoRow('Profile version', this.fit.header.profileVersion, this.fileHeaderTable);
+        this.addInfoRow('Data size', this.fit.header.dataSize + ' B', this.fileHeaderTable);
+        this.addInfoRow('Magic', '"' + this.fit.header.magic + '"', this.fileHeaderTable);
+        this.addInfoRow('CRC', this.fit.header.crc, this.fileHeaderTable);
+
+        this.addInfoRow('Records', this.fit.records.length, this.fileContentsTable);
+
+        this.addInfoRow('CRC', this.fit.header.crc2, this.fileFooterTable);
+    }
+
+    addInfoRow(key, value, container) {
+        let tr = this.rowTemplate.cloneNode(true);
+        let [tdKey, tdValue] = tr.querySelectorAll('td');
+        tdKey.innerText = key;
+        tdValue.innerText = value;
+        container.appendChild(tr);
+    }
+
+    async showErrorMessage(message) {
+        this.errorScreen.querySelector('h1').innerText = message;
+        await this.switchScreen(FitApp.SCREEN_ERROR);
     }
 }
 
@@ -361,6 +410,7 @@ FitApp.SAMPLE_FIT_FILE_NAME = 'sample/lax-ventura.fit';
 FitApp.SCREEN_DROP = 'drop-target-screen';
 FitApp.SCREEN_LOADING = 'loading-screen';
 FitApp.SCREEN_MAIN = 'main-screen';
+FitApp.SCREEN_ERROR = 'error-screen';
 
 // since the script is deferred, this will only run after the page is loaded
 (new FitApp()).initialize();

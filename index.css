@@ -3,6 +3,11 @@ body {
     font-family: sans-serif;
 }
 
+.error {
+    color: #a94442;
+    background-color: #f2dede;
+}
+
 .full-screen {
     position: absolute;
     left: 0;
@@ -16,4 +21,8 @@ body {
 .full-screen-message {
     display: table-cell;
     vertical-align: middle;
+}
+
+td:first-child {  /* make all tables share the same column width (avoids ugly misalignment among tables) */
+    width: 60%;
 }

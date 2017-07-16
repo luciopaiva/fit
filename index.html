@@ -24,10 +24,74 @@
     </div>
 </div>
 
+<div id="error-screen" class="full-screen error">
+    <div class="full-screen-message">
+        <h1>Unknown error!</h1>
+        <h1><a href="javascript:location.reload()">Reload app</a></h1>
+    </div>
+</div>
+
 <div id="main-screen" class="container">
     <div class="row">
         <div class="col-md-12">
             <h1>Fit File Analyzer</h1>
+            <hr>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="panel panel-default">
+                <div id="file-info" class="panel-heading"></div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-4">
+            <div class="panel panel-default">
+                <div class="panel-heading">File header</div>
+                <table id="file-header-row-template" class="hidden">
+                    <tr>
+                        <td class="row-property"></td>
+                        <td class="row-value"></td>
+                    </tr>
+                </table>
+                <table id="file-header-table" class="table">
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-4">
+            <div class="panel panel-default">
+                <div class="panel-heading">File contents</div>
+                <table id="file-contents-row-template" class="hidden">
+                    <tr>
+                        <td class="row-property"></td>
+                        <td class="row-value"></td>
+                    </tr>
+                </table>
+                <table id="file-contents-table" class="table">
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-4">
+            <div class="panel panel-default">
+                <div class="panel-heading">File footer</div>
+                <table id="file-footer-row-template" class="hidden">
+                    <tr>
+                        <td class="row-property"></td>
+                        <td class="row-value"></td>
+                    </tr>
+                </table>
+                <table id="file-footer-table" class="table">
+                    <tbody></tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
