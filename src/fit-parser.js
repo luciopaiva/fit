@@ -28,9 +28,18 @@ class FitParser {
 
         // FIT file records
 
+        this.definitionMessages = [];
+        this.dataMessages = [];
         this.records = [];
+
         while (this.dataReader.getPosition() < this.header.size + this.header.dataSize) {
-            this.records.push(this.readRecord());
+            const record = this.readRecord();
+            if (record.header.messageType === 1) {
+                this.definitionMessages.push(record);
+            } else {
+                this.dataMessages.push(record);
+            }
+            this.records.push(record);
         }
 
         const bytesLeft = (this.length() - this.dataReader.getPosition());

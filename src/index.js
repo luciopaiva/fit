@@ -99,7 +99,6 @@ class FitApp {
         this.fileInfoField.innerText = `${fileName} (${buffer.byteLength} bytes)`;
 
         // bind header info
-        // size: 'B', protocolVersion: 'B', profileVersion: 'W', dataSize: 'D', magic: 'S4'
         this.addInfoRow('Header size', this.fit.header.size + ' B', this.fileHeaderTable);
         this.addInfoRow('Protocol version', this.fit.header.protocolVersion, this.fileHeaderTable);
         this.addInfoRow('Profile version', this.fit.header.profileVersion, this.fileHeaderTable);
@@ -107,8 +106,12 @@ class FitApp {
         this.addInfoRow('Magic', '"' + this.fit.header.magic + '"', this.fileHeaderTable);
         this.addInfoRow('CRC', this.fit.header.crc, this.fileHeaderTable);
 
+        // bind contents info
         this.addInfoRow('Records', this.fit.records.length, this.fileContentsTable);
+        this.addInfoRow('Definitions messages', this.fit.definitionMessages.length, this.fileContentsTable);
+        this.addInfoRow('Data messages', this.fit.dataMessages.length, this.fileContentsTable);
 
+        // bind footer info
         this.addInfoRow('CRC', this.fit.header.crc2, this.fileFooterTable);
     }
 
