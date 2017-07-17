@@ -113,7 +113,7 @@ class FitParser {
         // field definitions
         recordContent.fields = [];
         for (let fi = 0; fi < recordContent.numberOfFields; fi++) {
-            const field = {};
+            const field = new FitDefinitionField();
             recordContent.fields.push(field);
             this.dataReader.read(field, {fieldDefinitionNumber: 'B', size: 'B', baseType: 'B'});
         }
