@@ -40,11 +40,11 @@ class FitParser {
             const record = this.readRecord();
             if (record instanceof FitDefinitionMessage) {
                 this.definitionMessages.push(record);
-                console.info(record);
                 if (dataMessagesCount !== -1) {
-                    console.info(`Definition found, followed by ${dataMessagesCount} data messages`);
+                    console.info(`${dataMessagesCount} data messages`);
                 }
                 dataMessagesCount = 0;
+                console.info(record);
             } else if (record instanceof FitDataMessage) {
                 this.dataMessages.push(record);
                 dataMessagesCount++;
@@ -53,7 +53,7 @@ class FitParser {
             }
             this.records.push(record);
         }
-        console.info(`Definition found, followed by ${dataMessagesCount} data messages`);
+        console.info(`${dataMessagesCount} data messages`);
 
         const bytesLeft = (this.length() - this.dataReader.getPosition());
 
