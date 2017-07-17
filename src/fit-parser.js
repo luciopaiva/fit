@@ -35,17 +35,25 @@ class FitParser {
         /** @type {FitMessage[]} */
         this.records = [];
 
+        let dataMessagesCount = -1;
         while (this.dataReader.getPosition() < this.header.size + this.header.dataSize) {
             const record = this.readRecord();
             if (record instanceof FitDefinitionMessage) {
                 this.definitionMessages.push(record);
+                console.info(record);
+                if (dataMessagesCount !== -1) {
+                    console.info(`Definition found, followed by ${dataMessagesCount} data messages`);
+                }
+                dataMessagesCount = 0;
             } else if (record instanceof FitDataMessage) {
                 this.dataMessages.push(record);
+                dataMessagesCount++;
             } else {
                 throw new Error('Unknown FIT message: ' + record.constructor.name);
             }
             this.records.push(record);
         }
+        console.info(`Definition found, followed by ${dataMessagesCount} data messages`);
 
         const bytesLeft = (this.length() - this.dataReader.getPosition());
 
@@ -91,12 +99,16 @@ class FitParser {
      * @return {FitDefinitionMessage}
      */
     readDefinitionMessage(recordHeader) {
-        const recordContent = new FitDefinitionMessage();
+        const recordContent = new FitDefinitionMessage(recordHeader);
 
         this.recordPayloadSize = 0;
 
-        this.dataReader.read(recordContent,
-            { reserved: 'B', architecture: 'B', globalMessageNumber: 'W', numberOfFields: 'B'});
+        this.dataReader.read(recordContent, { reserved: 'B', architecture: 'B' });
+
+        const isLittleEndian = recordContent.architecture === 0;
+        this.dataReader.setEndianness(isLittleEndian ? DataReader.ENDIANNESS_LITTLE : DataReader.ENDIANNESS_BIG);
+
+        this.dataReader.read(recordContent, { globalMessageNumber: 'W', numberOfFields: 'B'});
 
         // field definitions
         recordContent.fields = [];

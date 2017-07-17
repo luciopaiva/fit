@@ -14,6 +14,10 @@ class DataReader {
         this.isLittleEndian = true;
     }
 
+    setEndianness(endianness) {
+        this.isLittleEndian = endianness === DataReader.ENDIANNESS_LITTLE;
+    }
+
     getPosition() {
         return this.position;
     }
@@ -107,3 +111,6 @@ class DataReader {
         return String.fromCharCode(...new Uint8Array(bufferSlice));
     }
 }
+
+DataReader.ENDIANNESS_LITTLE = 1;
+DataReader.ENDIANNESS_BIG = 2;

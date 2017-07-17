@@ -31,9 +31,9 @@ class FitDefinitionMessage extends FitMessage {
         this.reserved = -1;
         this.architecture = -1;
         this.globalMessageNumber = -1;
-        this.numberOfFields = -1;
+        this.numberOfFields = 0;
         this.fields = [];
-        this.developerNumberOfFields = -1;
+        this.developerNumberOfFields = 0;
         this.developerFields = [];
     }
 }
