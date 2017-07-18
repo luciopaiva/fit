@@ -1,5 +1,16 @@
 "use strict";
 
+/*
+   These are a series of classes to help parsing FIT files.
+
+   FIT file overall structure:
+   - header: FitFileHeader
+   - content: sequence of FitMessage
+   - footer: 2-byte CRC
+
+   FitMessages can be either FitDefinitionMessages or FitDataMessages.
+ */
+
 class FitRecordHeader {
 
     constructor () {
@@ -76,7 +87,8 @@ class FitMessageType {
     static parseTypesFromObject(object) {
         const result = new Map();
 
-        for (const messageNum of Object.keys(object)) {
+        for (const key of Object.keys(object)) {
+            const messageNum = parseInt(key, 10);
             const typeObj = object[messageNum];
             const name = typeObj.name;
             delete typeObj.name;  // so the only properties left are field types
@@ -105,7 +117,8 @@ class FitMessageField {
     static parseFieldsFromObject(object) {
         const result = new Map();
 
-        for (const fieldNum of Object.keys(object)) {
+        for (const key of Object.keys(object)) {
+            const fieldNum = parseInt(key, 10);
             const typeObj = object[fieldNum];
             const name = typeObj.field;
             const type = typeObj.type;
