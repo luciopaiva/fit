@@ -135,15 +135,19 @@ class FitApp {
 
         const table = panel.querySelector('.section-table tbody');
 
-        for (const fieldDefinition of section.fitDefinitionMessage.fields) {
+
+        for (let i = 0; i < section.fitDefinitionMessage.fields.length; i++) {
+            const fieldDefinition = section.fitDefinitionMessage.fields[i];
+            const sampleValue = section.fitDataMessages[0].fields[i];
+
             /** @type {FitMessageField} */
             const field = messageType.fieldById.get(fieldDefinition.fieldDefinitionNumber);
-            const key = field.name;
+            const key = field.name + ' (' + fieldDefinition.size + ' B, baseType=0x' + fieldDefinition.baseType.toString(16) + ')';
 
             const tr = this.sectionRowTemplate.cloneNode(true);
             let [tdKey, tdValue] = tr.querySelectorAll('td');
             tdKey.innerText = key;
-            tdValue.innerText = '';
+            tdValue.innerText = sampleValue;
             table.appendChild(tr);
         }
 

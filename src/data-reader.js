@@ -94,8 +94,20 @@ class DataReader {
         return result;
     }
 
+    readInt8() {
+        const result = this.dataView.getInt8(this.position);
+        this.position++;
+        return result;
+    }
+
     readUint16() {
         const result = this.dataView.getUint16(this.position, this.isLittleEndian);
+        this.position += 2;
+        return result;
+    }
+
+    readInt16() {
+        const result = this.dataView.getInt16(this.position, this.isLittleEndian);
         this.position += 2;
         return result;
     }
@@ -103,6 +115,24 @@ class DataReader {
     readUint32() {
         const result = this.dataView.getUint32(this.position, this.isLittleEndian);
         this.position += 4;
+        return result;
+    }
+
+    readInt32() {
+        const result = this.dataView.getInt32(this.position, this.isLittleEndian);
+        this.position += 4;
+        return result;
+    }
+
+    readFloat32() {
+        const result = this.dataView.getFloat32(this.position, this.isLittleEndian);
+        this.position += 4;
+        return result;
+    }
+
+    readFloat64() {
+        const result = this.dataView.getFloat64(this.position, this.isLittleEndian);
+        this.position += 8;
         return result;
     }
 

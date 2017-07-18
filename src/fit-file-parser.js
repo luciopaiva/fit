@@ -198,17 +198,89 @@ class FitFileParser {
      * @private
      * @param {DataReader} dataReader
      * @param {FitDefinitionMessage} definitionMessage
-     * @param {FitMessageHeader} recordHeader
+     * @param {FitMessageHeader} messageHeader
      * @return {FitDataMessage}
      */
-    static readDataMessage(dataReader, definitionMessage, recordHeader) {
-        const recordContent = new FitDataMessage(recordHeader);
-        if (recordHeader.messageTypeSpecific === 1) {
+    static readDataMessage(dataReader, definitionMessage, messageHeader) {
+        const dataMessage = new FitDataMessage(messageHeader);
+        if (messageHeader.messageTypeSpecific === 1) {
             throw new FitParserException('messageTypeSpecific field should not be 1 for data messages');
         }
 
-        dataReader.skip(definitionMessage.dataMessagePayloadSize);
-        return recordContent;
+        for (const fieldDefinition of definitionMessage.fields) {
+            let size = 1;
+
+            switch (fieldDefinition.baseType) {
+                case 0x00: // enum, 1 byte
+                case 0x02: // uint8
+                case 0x0A: // uint8z
+                case 0x0D: // byte
+                    dataMessage.fields.push(FitFileParser.readSeries(dataReader.readUint8.bind(dataReader), size));
+                    break;
+                case 0x01: // sint8
+                    dataMessage.fields.push(FitFileParser.readSeries(dataReader.readInt8.bind(dataReader), size));
+                    break;
+                case 0x83: // sint16
+                    size = Math.floor(fieldDefinition.size / 2);
+                    dataMessage.fields.push(FitFileParser.readSeries(dataReader.readInt16.bind(dataReader), size));
+                    break;
+                case 0x84: // uint16
+                case 0x8B: // uint16z
+                    size = Math.floor(fieldDefinition.size / 2);
+                    dataMessage.fields.push(FitFileParser.readSeries(dataReader.readUint16.bind(dataReader), size));
+                    break;
+                case 0x85: // sint32
+                    size = Math.floor(fieldDefinition.size / 4);
+                    dataMessage.fields.push(FitFileParser.readSeries(dataReader.readInt32.bind(dataReader), size));
+                    break;
+                case 0x86: // uint32
+                case 0x8C: // uint32z
+                    size = Math.floor(fieldDefinition.size / 4);
+                    dataMessage.fields.push(FitFileParser.readSeries(dataReader.readUint32.bind(dataReader), size));
+                    break;
+                case 0x07: // null-terminated string
+                    size = fieldDefinition.size;
+                    dataMessage.fields.push(dataReader.readString(fieldDefinition.size));
+                    break;
+                case 0x88: // float32
+                    size = Math.floor(fieldDefinition.size / 4);
+                    dataMessage.fields.push(FitFileParser.readSeries(dataReader.readFloat32.bind(dataReader), size));
+                    break;
+                case 0x89: // float64
+                    size = Math.floor(fieldDefinition.size / 8);
+                    dataMessage.fields.push(FitFileParser.readSeries(dataReader.readFloat64.bind(dataReader), size));
+                    break;
+                case 0x8E: // sint64
+                    size = Math.floor(fieldDefinition.size / 8);
+                    dataReader.skip(8 * size);
+                    dataMessage.fields.push(-1);
+                    // dataMessage.fields.push(dataReader.readInt64());  // ToDo implement me!
+                    break;
+                case 0x8F: // uint64
+                case 0x90: // uint64z
+                    size = Math.floor(fieldDefinition.size / 8);
+                    dataReader.skip(8 * size);
+                    dataMessage.fields.push(-1);
+                    // dataMessage.fields.push(dataReader.readUint64());  // ToDo implement me!
+                    break;
+                default:
+                    throw new FitParserException('Unknown field base type ' + fieldDefinition.baseType);
+            }
+        }
+        // dataReader.skip(definitionMessage.dataMessagePayloadSize);
+        return dataMessage;
+    }
+
+    static readSeries(reader, times) {
+        if (times === 1) {
+            return reader();
+        } else {
+            const result = [];
+            for (let i = 0; i < times; i++) {
+                result.push(reader());
+            }
+            return result;
+        }
     }
 }
 

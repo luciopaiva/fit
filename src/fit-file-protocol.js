@@ -189,6 +189,7 @@ class FitDataMessage extends FitMessage {
      */
     constructor (header) {
         super(header);
+        this.fields = [];
     }
 }
 
@@ -261,6 +262,73 @@ class FitMessageField {
         return result;
     }
 }
+
+/*
+Distinct field types:
+
+file
+manufacturer
+uint16
+uint32z
+date_time
+string
+uint8z
+sport_bits_0
+workout_capabilities
+connectivity_capabilities
+uint8
+uint32
+sint8
+display_orientation
+side
+gender
+language
+display_measure
+display_heart
+display_power
+activity_class
+display_position
+user_local_id
+byte
+message_index
+bool
+uint16z
+sport
+sub_sport
+hr_zone_calc
+pwr_zone_calc
+goal
+goal_recurrence
+event
+event_type
+sint32
+session_trigger
+left_right_balance_100
+swim_stroke
+sint16
+intensity
+lap_trigger
+left_right_balance
+activity_type
+stroke_type
+device_index
+battery_status
+body_location
+ant_network
+source_type
+wkt_step_duration
+wkt_step_target
+weight
+course_capabilities
+course_point
+activity
+local_date_time
+file_flags
+mesg_num
+mesg_count
+hr_type
+bp_status
+ */
 
 // Message types taken from Pierre Jacquier's easy-fit project
 /*
