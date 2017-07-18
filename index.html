@@ -45,57 +45,87 @@
     </div>
 
     <div class="row">
+        <!-- left pane -->
         <div class="col-md-4">
-            <div class="panel panel-default">
-                <div id="file-info" class="panel-heading"></div>
+            <!-- file name -->
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="panel panel-default">
+                        <div id="file-info" class="panel-heading"></div>
+                    </div>
+                </div>
+            </div>
+            <!-- file header info -->
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">File header</div>
+                        <table id="file-header-row-template" class="hidden">
+                            <tr>
+                                <td class="row-property"></td>
+                                <td class="row-value"></td>
+                            </tr>
+                        </table>
+                        <table id="file-header-table" class="table">
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <!-- file contents info -->
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">File contents</div>
+                        <table id="file-contents-row-template" class="hidden">
+                            <tr>
+                                <td class="row-property"></td>
+                                <td class="row-value"></td>
+                            </tr>
+                        </table>
+                        <table id="file-contents-table" class="table">
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <!-- file footer info -->
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">File footer</div>
+                        <table id="file-footer-row-template" class="hidden">
+                            <tr>
+                                <td class="row-property"></td>
+                                <td class="row-value"></td>
+                            </tr>
+                        </table>
+                        <table id="file-footer-table" class="table">
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-    <div class="row">
-        <div class="col-md-4">
-            <div class="panel panel-default">
-                <div class="panel-heading">File header</div>
-                <table id="file-header-row-template" class="hidden">
-                    <tr>
-                        <td class="row-property"></td>
-                        <td class="row-value"></td>
-                    </tr>
-                </table>
-                <table id="file-header-table" class="table">
-                    <tbody></tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-md-4">
-            <div class="panel panel-default">
-                <div class="panel-heading">File contents</div>
-                <table id="file-contents-row-template" class="hidden">
-                    <tr>
-                        <td class="row-property"></td>
-                        <td class="row-value"></td>
-                    </tr>
-                </table>
-                <table id="file-contents-table" class="table">
-                    <tbody></tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-md-4">
-            <div class="panel panel-default">
-                <div class="panel-heading">File footer</div>
-                <table id="file-footer-row-template" class="hidden">
-                    <tr>
-                        <td class="row-property"></td>
-                        <td class="row-value"></td>
-                    </tr>
-                </table>
-                <table id="file-footer-table" class="table">
-                    <tbody></tbody>
-                </table>
+
+        <!-- right pane -->
+        <div id="section-group" class="col-md-8">
+            <table id="section-table-template" class="hidden">
+                <tr>
+                    <td class="row-property"></td>
+                    <td class="row-value"></td>
+                </tr>
+            </table>
+            <div id="section-panel-container-template" class="hidden">
+                <div class="panel panel-default section-panel">
+                    <div class="panel-heading"></div>
+                    <table class="table section-table">
+                        <tbody></tbody>
+                    </table>
+                    <div class="panel-body text-center hidden">
+                        ... and more <span class="number-messages-left"></span> messages
+                    </div>
+                </div>
             </div>
         </div>
     </div>

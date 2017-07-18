@@ -28,6 +28,10 @@ class FitApp {
         this.rowTemplate = document.getElementById('file-header-row-template').querySelector('tr');
         this.fileContentsTable = document.getElementById('file-contents-table').querySelector('tbody');
         this.fileFooterTable = document.getElementById('file-footer-table').querySelector('tbody');
+        this.sectionTemplate =
+            document.getElementById('section-panel-container-template').querySelector('.section-panel');
+        this.sectionRowTemplate = document.getElementById('section-table-template').querySelector('tr');
+        this.sectionContainer = document.getElementById('section-group');
     }
 
     async onSampleButtonClick() {
@@ -114,6 +118,42 @@ class FitApp {
 
         // bind footer info
         this.addInfoRow('CRC', '0x' + this.fitFile.footer.crc.toString(16), this.fileFooterTable);
+
+        for (const section of this.fitFile.sections) {
+            this.addSectionPanel(section);
+        }
+    }
+
+    /**
+     * @param {FitFileSection} section
+     */
+    addSectionPanel(section) {
+        const panel = this.sectionTemplate.cloneNode(true);
+        /** @type {FitMessageType} */
+        const messageType = FIT_MESSAGE_TYPES.get(section.fitDefinitionMessage.globalMessageNumber);
+        panel.querySelector('.panel-heading').innerText = messageType.name;
+
+        const table = panel.querySelector('.section-table tbody');
+
+        for (const fieldDefinition of section.fitDefinitionMessage.fields) {
+            /** @type {FitMessageField} */
+            const field = messageType.fieldById.get(fieldDefinition.fieldDefinitionNumber);
+            const key = field.name;
+
+            const tr = this.sectionRowTemplate.cloneNode(true);
+            let [tdKey, tdValue] = tr.querySelectorAll('td');
+            tdKey.innerText = key;
+            tdValue.innerText = '';
+            table.appendChild(tr);
+        }
+
+        if (section.fitDataMessages.length > 1) {
+            const footer = panel.querySelector('.number-messages-left');
+            footer.innerText = section.fitDataMessages.length.toString();
+            footer.parentNode.classList.remove('hidden');
+        }
+
+        this.sectionContainer.appendChild(panel);
     }
 
     addInfoRow(key, value, container) {
