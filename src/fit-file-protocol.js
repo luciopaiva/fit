@@ -1,74 +1,201 @@
 "use strict";
 
 /*
-   These are a series of classes to help parsing FIT files.
+These are a series of classes to help parsing FIT files.
 
-   FIT file overall structure:
-   - header: FitFileHeader
-   - content: sequence of FitMessage
-   - footer: 2-byte CRC
+FIT file overall structure:
 
-   FitMessages can be either FitDefinitionMessages or FitDataMessages.
+- header: FitFileHeader
+- content: sequence of FitMessage
+- footer: FitFileFooter
+
+FitMessages can be either FitDefinitionMessages or FitDataMessages.
+
+A FIT file content can be seen as a repetition of the following pattern:
+
+    <FitDefinitionMessage> <FitDataMessage>*
+
+A FitDefinitionMessage tells us how the following FitDataMessages should be parsed regarding field types and sizes.
+FitDataMessage contain actual data, like latitude, longitude, temperature, power, etc...
+
+Both FitMessage types being with a FitMessageHeader, a single byte containing information about the FitMessage itself.
+It tells, for instance, if we're dealing with a FitDefinitionMessage or a FitDataMessage.
+
  */
 
-class FitRecordHeader {
+/**
+ * Umbrella class to hold everything found inside a single FIT file.
+ */
+class FitFile {
 
     constructor () {
+        /** @type {FitFileHeader} */
+        this.header = new FitFileHeader();
+        /** @type {FitFileSection} */
+        this.sections = [];
+        /** @type {FitFileFooter} */
+        this.footer = new FitFileFooter();
+    }
+}
+
+/**
+ * Helper class to group a FitDefinitionMessage with its following FitDataMessages.
+ */
+class FitFileSection {
+
+    constructor () {
+        /** @type {FitDefinitionMessage} */
+        this.fitDefinitionMessage = null;
+        /** @type {FitDataMessage[]} an array of FitDataMessage respecting the definition in this.fitDefinitionMessage */
+        this.fitDataMessages = [];
+    }
+}
+
+/**
+ * Represents a FIT file header. Appears only once in the file and it's always the first thing in it.
+ */
+class FitFileHeader {
+
+    constructor () {
+        /** @type {number} 1 byte, the size of this header in the FIT file - usually 14 bytes, but can be 12 */
+        this.size = 0;
+        /** @type {number} 1 byte, FIT protocol version */
+        this.protocolVersion = 0;
+        /** @type {number} 2 bytes, FIT profile version */
+        this.profileVersion = 0;
+        /** @type {number} 4 bytes, size of the FIT content (everything minus header and trailing CRC) */
+        this.dataSize = 0;
+        /** @type {string} 4-byte string, should be always ".FIT" */
+        this.magic = '';
+        /** @type {number} 2 bytes, CRC (I think it considers only header's contents).
+         *                 Won't be present if `this.size === 12`. */
+        this.crc = 0;
+    }
+}
+
+/**
+ * Represents a FIT file footer. Appears only once in the file and it's always the last thing in it.
+ */
+class FitFileFooter {
+
+    constructor () {
+        /** @type {number} 2 bytes, CRC (I think it considers the whole file contents) */
+        this.crc = 0;
+    }
+}
+
+/**
+ * Represents the sole byte that precedes each and every FIT message, containing meta data about it.
+ */
+class FitMessageHeader {
+
+    constructor () {
+        /** @type {number} 1 bit: if 0, represents a normal header; if 1, a compressed header */
         this.headerType = -1;
+        /** @type {number} 1 bit: if 0, represents a definition message; if 1, a data message */
         this.messageType = -1;
+        /** @type {number} 1 bit: depends on the message type (see FIT file documentation) */
         this.messageTypeSpecific = -1;
+        /** @type {number} 1 bit: reserved */
         this.reserved = -1;
+        /** @type {number} 4 bits: see FIT file documentation */
         this.localMessageType = -1;
     }
 }
 
+/**
+ * Base class for FitDefinitionMessage and FitDataMessage.
+ */
 class FitMessage {
 
     /**
-     * @param {FitRecordHeader} header
+     * @param {FitMessageHeader} header
      */
     constructor (header) {
+        /** @type {FitMessageHeader} */
         this.header = header;
     }
 }
 
+/**
+ * Represents a definition message.
+ */
 class FitDefinitionMessage extends FitMessage {
 
     /**
-     * @param {FitRecordHeader} header
+     * @param {FitMessageHeader} header
      */
     constructor (header) {
         super(header);
+        /** @type {number} 1 byte: reserved */
         this.reserved = -1;
+        /** @type {number} 1 byte: if 0, everything that comes after it is little endian; otherwise, big endian
+         *                 "Everything" means even the other header fields that succeed it! */
         this.architecture = -1;
+        /** @type {number} 2 bytes: the type of this definition message (mind endianness above when reading this!) */
         this.globalMessageNumber = -1;
+        /** @type {number} 1 byte: how many definition fields follow */
         this.numberOfFields = 0;
-        /** @type {FitDefinitionField[]} */
+        /** @type {FitDefinitionField[]} 3 bytes each FitDefinitionField */
         this.fields = [];
+        /** @type {number} 1 byte: how many developer definition fields follow */
         this.developerNumberOfFields = 0;
+        /** @type {FitDeveloperDefinitionField[]} 3 bytes each FitDefinitionField */
         this.developerFields = [];
+
+        /** @type {number} this is a transient field, i.e., it doesn't exist in the file. It helps determining the size
+         *                 of data messages that follow */
+        this.dataMessagePayloadSize = 0;
     }
 }
 
+/**
+ * Represents one of the fields of a definition message.
+ */
 class FitDefinitionField {
 
     constructor () {
+        /** @type {number} 1 byte */
         this.fieldDefinitionNumber = 0;
+        /** @type {number} 1 byte */
         this.size = 0;
+        /** @type {number} 1 byte */
         this.baseType = 0;
     }
 }
 
+/**
+ * Represents one of the developer fields of a definition message.
+ */
+class FitDeveloperDefinitionField {
+
+    constructor () {
+        /** @type {number} 1 byte */
+        this.fieldNumber = 0;
+        /** @type {number} 1 byte */
+        this.size = 0;
+        /** @type {number} 1 byte */
+        this.developerDataIndex = 0;
+    }
+}
+
+/**
+ * Represents a data message.
+ */
 class FitDataMessage extends FitMessage {
 
     /**
-     * @param {FitRecordHeader} header
+     * @param {FitMessageHeader} header
      */
     constructor (header) {
         super(header);
     }
 }
 
+/**
+ * Stores a FIT message type. This structure is not found inside a FIT file, but represents a type as pointed to by
+ * a FitDefinitionMessage.globalMessageNumber.
+ */
 class FitMessageType {
 
     /**
@@ -100,6 +227,9 @@ class FitMessageType {
     }
 }
 
+/**
+ * Stores a FIT message type. This structure is not found inside a FIT file, but represents a field of a FitMessageType.
+ */
 class FitMessageField {
 
     constructor (name, type, units, scale, offset) {

@@ -6,10 +6,11 @@
 class DataReader {
 
     /**
-     * @param {DataView} dataView
+     * @param {ArrayBuffer} buffer
      */
-    constructor (dataView) {
-        this.dataView = dataView;
+    constructor (buffer) {
+        this.buffer = buffer;
+        this.dataView = new DataView(buffer);
         this.position = 0;
         this.isLittleEndian = true;
     }

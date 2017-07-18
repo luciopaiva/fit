@@ -6,7 +6,7 @@
 class FitApp {
 
     constructor () {
-        this.fit = null;
+        this.fitFile = null;
     }
 
     /**
@@ -84,11 +84,8 @@ class FitApp {
     async processFitFile(fileName, buffer) {
         await this.switchScreen(FitApp.SCREEN_LOADING);
 
-        const dataView = new DataView(buffer);
-        const dataReader = new DataReader(dataView);
-
         try {
-            this.fit = new FitParser(dataReader);
+            this.fitFile = FitFileParser.parseFromBuffer(buffer);
         } catch (error) {
             if (error instanceof FitParserException) {
                 await this.showErrorMessage(error.message);
@@ -102,20 +99,21 @@ class FitApp {
         this.fileInfoField.innerText = `${fileName} (${buffer.byteLength} bytes)`;
 
         // bind header info
-        this.addInfoRow('Header size', this.fit.header.size + ' B', this.fileHeaderTable);
-        this.addInfoRow('Protocol version', this.fit.header.protocolVersion, this.fileHeaderTable);
-        this.addInfoRow('Profile version', this.fit.header.profileVersion, this.fileHeaderTable);
-        this.addInfoRow('Data size', this.fit.header.dataSize + ' B', this.fileHeaderTable);
-        this.addInfoRow('Magic', '"' + this.fit.header.magic + '"', this.fileHeaderTable);
-        this.addInfoRow('CRC', this.fit.header.crc, this.fileHeaderTable);
+        this.addInfoRow('Header size', this.fitFile.header.size + ' B', this.fileHeaderTable);
+        this.addInfoRow('Protocol version', this.fitFile.header.protocolVersion, this.fileHeaderTable);
+        this.addInfoRow('Profile version', this.fitFile.header.profileVersion, this.fileHeaderTable);
+        this.addInfoRow('Data size', this.fitFile.header.dataSize + ' B', this.fileHeaderTable);
+        this.addInfoRow('Magic', '"' + this.fitFile.header.magic + '"', this.fileHeaderTable);
+        this.addInfoRow('CRC', '0x' + this.fitFile.header.crc.toString(16), this.fileHeaderTable);
 
         // bind contents info
-        this.addInfoRow('Records', this.fit.records.length, this.fileContentsTable);
-        this.addInfoRow('Definitions messages', this.fit.definitionMessages.length, this.fileContentsTable);
-        this.addInfoRow('Data messages', this.fit.dataMessages.length, this.fileContentsTable);
+        this.addInfoRow('Definition messages', this.fitFile.sections.length, this.fileContentsTable);
+        const numberOfDataMessages = this.fitFile.sections.reduce(
+            (acc, section) => acc + section.fitDataMessages.length, 0);
+        this.addInfoRow('Total data messages', numberOfDataMessages, this.fileContentsTable);
 
         // bind footer info
-        this.addInfoRow('CRC', this.fit.header.crc2, this.fileFooterTable);
+        this.addInfoRow('CRC', '0x' + this.fitFile.footer.crc.toString(16), this.fileFooterTable);
     }
 
     addInfoRow(key, value, container) {
