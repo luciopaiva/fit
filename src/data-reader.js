@@ -136,10 +136,28 @@ class DataReader {
         return result;
     }
 
+    /**
+     * Read a string of up to `length` bytes. The string is considered to be null-terminated, so it can end earlier
+     * without any problems. Regardless, the position marker will move `length` bytes. The string does not have to
+     * terminate with a null char if it occupies `length` bytes.
+     *
+     * @param {number} length - maximum size of the string to read
+     * @return {string}
+     */
     readString(length) {
         const bufferSlice = this.dataView.buffer.slice(this.position, this.position + length);
+        const buffer = new Uint8Array(bufferSlice);
+
+        let actualLength = 0;
+        for (let i = 0; i < length; i++) {
+            if (buffer[i] === 0) {
+                break;
+            }
+            actualLength = i + 1;
+        }
+
         this.position += length;
-        return String.fromCharCode(...new Uint8Array(bufferSlice));
+        return String.fromCharCode(...buffer.subarray(0, actualLength));
     }
 }
 
