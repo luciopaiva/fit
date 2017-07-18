@@ -90,8 +90,11 @@ class FitApp {
         try {
             this.fit = new FitParser(dataReader);
         } catch (error) {
-            await this.showErrorMessage(error.message);
-            return;
+            if (error instanceof FitParserException) {
+                await this.showErrorMessage(error.message);
+                return;
+            }
+            throw error;
         }
 
         await this.switchScreen(FitApp.SCREEN_MAIN);

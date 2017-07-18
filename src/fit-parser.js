@@ -19,7 +19,7 @@ class FitParser {
         });
 
         if (this.header.magic !== '.FIT') {
-            throw new Error('Invalid FIT file format (header signature was not found)');
+            throw new FitParserException('Invalid FIT file format (header signature was not found)');
         }
 
         if (this.header.size === 14) {
@@ -35,21 +35,31 @@ class FitParser {
         /** @type {FitMessage[]} */
         this.records = [];
 
+        // Iterate through all existing records, parsing each one into either FitDefinitionMessage or FitDataMessage
         let dataMessagesCount = -1;
         while (this.dataReader.getPosition() < this.header.size + this.header.dataSize) {
             const record = this.readRecord();
+
             if (record instanceof FitDefinitionMessage) {
+                // FIT definition message
                 this.definitionMessages.push(record);
                 if (dataMessagesCount !== -1) {
                     console.info(`${dataMessagesCount} data messages`);
                 }
                 dataMessagesCount = 0;
-                console.info(record);
+                const messageType = FIT_MESSAGE_TYPES.get(record.globalMessageNumber);
+                console.info(messageType.name);
+                for (const field of record.fields) {
+                    console.info('-> ' + messageType.fieldById.get(field.fieldDefinitionNumber).name);
+                }
+
             } else if (record instanceof FitDataMessage) {
+                // FIT data message
                 this.dataMessages.push(record);
                 dataMessagesCount++;
+
             } else {
-                throw new Error('Unknown FIT message: ' + record.constructor.name);
+                throw new FitParserException('Unknown FIT message: ' + record.constructor.name);
             }
             this.records.push(record);
         }
@@ -57,10 +67,12 @@ class FitParser {
 
         const bytesLeft = (this.length() - this.dataReader.getPosition());
 
+        // FOOTER
+
         if (bytesLeft === 2) {
             this.dataReader.read(this.header, { crc2: 'W' });
         } else if (bytesLeft !== 0) {
-            throw new Error('Malformed FIT file: unexpected trailing data (' + bytesLeft + ' unknown bytes)');
+            throw new FitParserException('Malformed FIT file: unexpected trailing data (' + bytesLeft + ' unknown bytes)');
         }
     }
 
@@ -78,7 +90,7 @@ class FitParser {
                 record = this.readDataMessage(recordHeader);
             }
         } else {  // compressed header
-            throw new Error('Found compressed header');
+            throw new FitParserException('Compressed headers are not supported yet');
         }
 
         return record;
@@ -146,7 +158,7 @@ class FitParser {
     readDataMessage(recordHeader) {
         const recordContent = new FitDataMessage(recordHeader);
         if (recordHeader.messageTypeSpecific === 1) {
-            throw new Error('messageTypeSpecific field should not be 1 for data messages');
+            throw new FitParserException('messageTypeSpecific field should not be 1 for data messages');
         }
 
         this.dataReader.skip(this.recordPayloadSize);
@@ -155,5 +167,11 @@ class FitParser {
 
     length() {
         return this.dataReader.dataView.byteLength;
+    }
+}
+
+class FitParserException extends Error {
+    constructor (message) {
+        super(message);
     }
 }
